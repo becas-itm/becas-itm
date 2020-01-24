@@ -7,6 +7,7 @@ services:
       - 9200:9200
       - 9300:9300
     environment:
+      - TZ=UTC
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -17,6 +18,7 @@ services:
     build:
       context: ./api-becas
     environment:
+      TZ: UTC
       DEBUG: app:*
       ELASTICSEARCH_HOST: http://elastic:9200
     stdin_open: true
@@ -33,6 +35,8 @@ services:
     build:
       context: ./web-becas
     command: yarn dev
+    environment:
+      TZ: UTC
     ports:
       - 3000:3000
     volumes:
@@ -47,6 +51,8 @@ services:
     entrypoint: ["/app/wait-for-it.sh", "becas_api:3000", "--", "nginx", "-g", "daemon off;"]
     volumes:
       - ./web-becas/public:/usr/share/nginx/html/web-becas
+    environment:
+      TZ: UTC
     ports:
       - 8080:80
     depends_on:
@@ -58,6 +64,7 @@ services:
     ports:
       - 5601:5601
     environment:
+      TZ: UTC
       ELASTICSEARCH_HOSTS: http://elastic:9200
 
 volumes:
