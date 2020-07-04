@@ -14,50 +14,32 @@ services:
     volumes:
       - elastic-data:/usr/share/elasticsearch/data
 
-  becas_api:
+  api:
     build:
       context: ./api-becas
+    entrypoint: ["waitforit", "-address", "http://elastic:9200", "-timeout", "120", "--", "/start.sh"]
     environment:
       TZ: UTC
-      DEBUG: app:*
-      ELASTICSEARCH_HOST: http://elastic:9200
-    stdin_open: true
-    command: [ "yarn", "backpack" ]
+      ELASTIC_HOST: http://elastic:9200
     ports:
-      - 8000:3000
-    volumes:
-      - ./api-becas:/usr/src/app
-      - /usr/src/app/node_modules
+      - 3001:80
+    links:
+      - elastic
     depends_on:
       - elastic
 
-  becas_web:
-    build:
-      context: ./web-becas
-    command: yarn dev
-    environment:
-      TZ: UTC
-    ports:
-      - 3000:3000
-    volumes:
-      - ./web-becas:/usr/src/app
-      - /usr/src/app/node_modules
-    depends_on:
-      - becas_api
-
-  becas_web_nginx:
+  nginx:
     build:
       context: ./nginx
-    entrypoint: ["/app/wait-for-it.sh", "becas_api:3000", "--", "nginx", "-g", "daemon off;"]
-    volumes:
-      - ./web-becas/public:/usr/share/nginx/html/web-becas
+    entrypoint: ["waitforit", "-address", "http://api:80", "-timeout", "120", "--", "nginx", "-g", "daemon off;"]
     environment:
       TZ: UTC
     ports:
-      - 8080:80
+      - 3000:80
+    links:
+      - api
     depends_on:
-      - becas_web
-      - becas_api
+      - api
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.3.0
